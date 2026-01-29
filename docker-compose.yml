@@ -1,0 +1,11 @@
+services:
+
+  opensearch:
+    image: ghcr.io/skpr/opensearch:3.x-v2-stable
+    ports:
+      - "9200:9200"
+    environment:
+      discovery.type: single-node
+      node.roles: "master,data,ingest,ml"
+      plugins.ml_commons.only_run_on_ml_node: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g"

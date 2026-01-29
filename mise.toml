@@ -1,0 +1,62 @@
+[tools]
+terraform = "1.12"
+
+[env]
+TF_CLI_CONFIG_FILE = ".terraformrc"
+
+[tasks."build"]
+description = "Build the Terraform provider"
+run = '''
+set -euo pipefail
+
+# Building the provider binary
+go build -o bin/terraform-provider-opensearch github.com/skpr/terraform-provider-opensearch
+
+# Derive OS/arch in the format terraform expects: linux_amd64, darwin_arm64, etc.
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m | sed -E 's/x86_64/amd64/; s/aarch64|arm64/arm64/; s/armv7.*/arm/')
+OS_ARCH="${OS}_${ARCH}"
+
+mkdir -p .terraform/mirror/terraform.local/skpr/opensearch/99.0.0/${OS_ARCH}
+mv bin/terraform-provider-opensearch .terraform/mirror/terraform.local/skpr/opensearch/99.0.0/linux_amd64/terraform-provider-opensearch
+
+# Clean up any existing lock file so we can use the latest built provider
+rm .terraform.lock.hcl || true
+'''
+
+[tasks."init"]
+description = "Initializes a Terraform working directory"
+run = "terraform init"
+
+[tasks."plan"]
+description = "Generates an execution plan for Terraform"
+run = "terraform plan -out=plan.out"
+depends = ["init"]
+
+[tasks."apply"]
+description = "Applies the changes required to reach the desired state of the configuration"
+run = "terraform apply plan.out"
+
+[tasks."destroy"]
+description = "Destroy Terraform-managed infrastructure"
+run = "terraform destroy"
+
+[tasks."validate"]
+description = "Validates the Terraform files"
+run = "terraform validate"
+
+[tasks."format"]
+description = "Formats the Terraform files"
+run = "terraform fmt"
+
+[tasks."state"]
+description = "State operations for Terraform"
+run = "terraform state"
+
+[tasks."import"]
+description = "Import operations for Terraform"
+run = "terraform import"
+
+[tasks."check"]
+description = "Checks the Terraform files"
+depends = ["format", "validate"]
