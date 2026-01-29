@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/function"
@@ -14,11 +15,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	opensearch "github.com/opensearch-project/opensearch-go/v2"
-	opensearchapi "github.com/opensearch-project/opensearch-go/v2/opensearchapi"
-	requestsigner "github.com/opensearch-project/opensearch-go/v2/signer/awsv2"
 	"github.com/opensearch-project/opensearch-go/v4"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+	requestsigner "github.com/opensearch-project/opensearch-go/v4/signer/awsv2"
 )
 
 var _ provider.Provider = &OpenSearchProvider{}
@@ -94,8 +93,6 @@ func (p *OpenSearchProvider) Configure(ctx context.Context, req provider.Configu
 
 	config := opensearch.Config{
 		Addresses: []string{data.Address.ValueString()},
-		Username:  data.Username.ValueString(),
-		Password:  data.Password.ValueString(),
 	}
 
 	if data.Insecure.ValueBool() {
@@ -114,9 +111,9 @@ func (p *OpenSearchProvider) Configure(ctx context.Context, req provider.Configu
 		)
 
 		if data.Profile.IsNull() {
-			awsConfig, err = config.LoadDefaultConfig(ctx)
+			awsConfig, err = awsconfig.LoadDefaultConfig(ctx)
 		} else {
-			awsConfig, err = config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile(data.Profile.ValueString()))
+			awsConfig, err = awsconfig.LoadDefaultConfig(ctx, awsconfig.WithSharedConfigProfile(data.Profile.ValueString()))
 		}
 
 		if err != nil {
